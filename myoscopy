@@ -3,22 +3,22 @@
 #title           :MyOScopy
 #description     :This script is used for copy Linux OS to backup device.
 #author          :Michal Muransky
-#date            :12-November-16
-version=1.7.6
+#date            :02-January-17
+version=1.7.7
 
 
 
 # SETINGS ##############################################################
 
 # Exclude following folders and do not backup them:
-EXCLUDE=(/boot /VMs/iso2 /VMs/img2 /proc /sys /tmp /run /mnt /media /lost+found)
+EXCLUDE=(/VMs/iso2 /VMs/img2 /proc /sys /tmp /run /mnt /media /lost+found)
 
 # Log file
 LOG=/tmp/myoscopy.txt
 LOGFILE=/var/log/myoscopy.log
 
 # Email
-EMAIL=mike.muransky@gmail.com
+EMAIL=xxx@xxxxx.com
 
 # Path to custom shutdown script (optional)
 SHUTSCRIPT=/usr/bin/shut
@@ -74,7 +74,7 @@ componentscheck() {
 
 sizecheck()     {
         EXCEPTGREP=${EXCLUDE[@]/#/|}; EXCEPTGREP=$(echo "$EXCEPTGREP"| cut -c 2- |tr -d " \t\n\r" )
-        WHAT=$(cat /etc/fstab |grep -vE "#|swap|SWAP|myoscopy" |grep -vE "$EXCEPTGREP" | grep -E "UUID|/dev" |awk '{print $2}'| sed ':a;N;$!ba;s/\n/ /g')
+        WHAT=$(cat /etc/fstab |grep -vE "#|boot|swap|SWAP|myoscopy" |grep -vE "$EXCEPTGREP" | grep -E "UUID|/dev" |awk '{print $2}'| sed ':a;N;$!ba;s/\n/ /g')
         NLINES=$(df -kP $WHAT | sed 1d |uniq | wc -l)
         COUNTER=0
         TOGETHER=0
@@ -125,8 +125,9 @@ mounted() {
 
 fstabedit() {	
 	echo "Editing fstab on backup device."
-	FSTYPE=$(df -T $DED | tail -1 | awk '{print $2}')
+	FSTYPE=$(df -T $DEDREAL | tail -1 | awk '{print $2}')
 	echo $DED "  /  " $FSTYPE " defaults  1 1" > /mnt/myoscopy/etc/fstab
+	grep " /boot" /etc/fstab >> /mnt/myoscopy/etc/fstab
 	cp /etc/fstab /tmp/fstab
 	egrep "$EXCEPTGREP" /tmp/fstab > /tmp/fstab.temp
 	cat /tmp/fstab.temp >> /mnt/myoscopy/etc/fstab
@@ -145,7 +146,7 @@ copy() {
         date >> $LOG
         if [ -b $DED ]; then DEDREAL=$DED; fi
         if [ -b /dev/$DED ]; then DEDREAL=/dev/$DED; fi
-        if [ ! -b $DED ]; then
+        if [ ! -b $DEDREAL ]; then
            echo "Destination $DEDREAL not found!" >> $LOG
            echo "Destination $DEDREAL not found!"
            cat $LOG >> $LOGFILE
@@ -165,8 +166,9 @@ copy() {
         fi
         echo "Running backup to $DEDREAL ." >> $LOG
         echo "Running backup to $DEDREAL . Please wait..."
+	BOOTMP=$(grep " /boot" /etc/fstab |awk '{print $2}')
 	DONOTCOPY=("${EXCLUDE[@]/%//*}")
-        rsync -aAXv --human-readable --exclude=/dev/* ${DONOTCOPY[@]/#/--exclude=} / /mnt/myoscopy | sed '0,/^$/d' >> $LOG 2>&1
+        rsync -aAXv --human-readable --exclude=$BOOTMP/* --exclude=/dev/* ${DONOTCOPY[@]/#/--exclude=} / /mnt/myoscopy | sed '0,/^$/d' >> $LOG 2>&1
         date +%F_%R > /mnt/myoscopy/.myoscopy_timestamp
 	fstabedit
         echo "Unmounting $DEDREAL and removing /mnt/myoscopy" >> $LOG
@@ -180,11 +182,6 @@ copy() {
         exit 0
 }
 
-#grubcheck() {}
-
-#bakgrub2() {}
-
-#bakgrub() {}
 
 # POST-PROCESSES:
 
