@@ -20,7 +20,7 @@ myoscopy [OPTIONS]... [-d|--to-disk=<partition>]
 -h, --help            This Help page
 ```
 
-#### Example:
+##### Example:
 ```
 myoscopy --to-disk=/dev/sdb1
 myoscopy -Sxd /dev/sdb1
