@@ -2,11 +2,12 @@
 
 ```
 myoscopy [OPTIONS]... [-d|--to-disk=<partition>]
+```
 
-Arguments:
+##### Options:
+```
 -d <partition>, --to-disk=<partition> Start OSCopy to destionation.
                                       If you are using LVM partition as the destination, use path /dev/mapper/...
-                                      
 -S, --shutdown        Shutdown after backup
 -x, --no-email        Report will be not sent via email
 -c, --clear           Can be used after interrupted backup
